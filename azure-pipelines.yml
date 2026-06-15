@@ -1,0 +1,34 @@
+trigger:
+  - master
+
+pool:
+  vmImage: ubuntu-latest
+
+stages:
+  - stage: Test
+    displayName: Install and test
+    jobs:
+      - job: RunTests
+        steps:
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: "3.11"
+
+          - script: |
+              pip install -r requirements.txt
+              pip install pytest
+            displayName: Install dependencies
+
+          - script: pytest test_app.py --tb=short
+            displayName: Run unit tests
+
+  - stage: Build
+    displayName: Build Docker image
+    dependsOn: Test
+    jobs:
+      - job: BuildImage
+        steps:
+          - script: |
+              docker build -t todo-api:$(Build.BuildId) .
+              echo "Image built successfully"
+            displayName: Build Docker image
